@@ -1,38 +1,26 @@
+import { db } from '../db';
+import { eTicketsTable } from '../db/schema';
 import { type ETicket } from '../schema';
+import { desc } from 'drizzle-orm';
 
-export async function getAllETickets(): Promise<ETicket[]> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is fetching all e-tickets from the database.
-    // This might be used for admin purposes or testing, not typically exposed to end users.
-    
-    return Promise.resolve([
-        {
-            id: 1,
-            ticket_id: "DEMO123",
-            passenger_name: "John Doe",
-            travel_date: new Date("2024-01-15"),
-            travel_time: "14:30",
-            origin: "New York",
-            destination: "Boston",
-            seat_number: "12A",
-            booking_reference: "ABC123XYZ",
-            qr_code_data: "TICKET:DEMO123:ABC123XYZ",
-            created_at: new Date(),
-            updated_at: new Date()
-        },
-        {
-            id: 2,
-            ticket_id: "DEMO456",
-            passenger_name: "Jane Smith",
-            travel_date: new Date("2024-01-20"),
-            travel_time: "09:15",
-            origin: "Los Angeles",
-            destination: "San Francisco",
-            seat_number: "8C",
-            booking_reference: "DEF456UVW",
-            qr_code_data: "TICKET:DEMO456:DEF456UVW",
-            created_at: new Date(),
-            updated_at: new Date()
-        }
-    ] as ETicket[]);
-}
+export const getAllETickets = async (): Promise<ETicket[]> => {
+  try {
+    // Fetch all e-tickets ordered by creation date (newest first)
+    const results = await db.select()
+      .from(eTicketsTable)
+      .orderBy(desc(eTicketsTable.created_at))
+      .execute();
+
+    // Convert database results to schema format
+    return results.map(ticket => ({
+      ...ticket,
+      // Convert string dates back to Date objects
+      travel_date: new Date(ticket.travel_date),
+      created_at: new Date(ticket.created_at),
+      updated_at: new Date(ticket.updated_at)
+    }));
+  } catch (error) {
+    console.error('Failed to fetch all e-tickets:', error);
+    throw error;
+  }
+};

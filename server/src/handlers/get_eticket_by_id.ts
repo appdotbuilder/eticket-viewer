@@ -1,28 +1,30 @@
+import { db } from '../db';
+import { eTicketsTable } from '../db/schema';
+import { eq } from 'drizzle-orm';
 import { type GetETicketByIdInput, type ETicket } from '../schema';
 
 export async function getETicketById(input: GetETicketByIdInput): Promise<ETicket | null> {
-    // This is a placeholder declaration! Real code should be implemented here.
-    // The goal of this handler is retrieving an e-ticket by its unique ticket_id from the database.
-    // This is the main functionality for users to view their e-tickets.
-    // Should return null if no ticket is found with the provided ticket_id.
-    
-    // Placeholder implementation - in real code, this would query the database
-    if (input.ticket_id === "DEMO123") {
-        return Promise.resolve({
-            id: 1,
-            ticket_id: input.ticket_id,
-            passenger_name: "John Doe",
-            travel_date: new Date("2024-01-15"),
-            travel_time: "14:30",
-            origin: "New York",
-            destination: "Boston",
-            seat_number: "12A",
-            booking_reference: "ABC123XYZ",
-            qr_code_data: `TICKET:${input.ticket_id}:ABC123XYZ`,
-            created_at: new Date(),
-            updated_at: new Date()
-        } as ETicket);
+  try {
+    // Query the database for the e-ticket with the specified ticket_id
+    const results = await db.select()
+      .from(eTicketsTable)
+      .where(eq(eTicketsTable.ticket_id, input.ticket_id))
+      .execute();
+
+    // Return null if no ticket found
+    if (results.length === 0) {
+      return null;
     }
-    
-    return Promise.resolve(null);
+
+    // Return the first (and should be only) result
+    // Note: travel_date comes as string from date column, need to convert to Date
+    const ticket = results[0];
+    return {
+      ...ticket,
+      travel_date: new Date(ticket.travel_date)
+    };
+  } catch (error) {
+    console.error('E-ticket retrieval failed:', error);
+    throw error;
+  }
 }
